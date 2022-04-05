@@ -94,11 +94,10 @@ def get_large_audio_transcription(path):
         # return the text for all chunks detected
         f.write('Condensed Output:')
         f.write('\n')
-        f.write(whole_text)\
+        f.write(whole_text)
+        os.remove(os.path.join(CHUNKS_FOLDER, chunk_filename))
 
         #remove all audio chunks after conversion complete
-        for f in os.listdir(CHUNKS_FOLDER):
-            os.remove(os.path.join(CHUNKS_FOLDER, f))
 
         return whole_text
 
