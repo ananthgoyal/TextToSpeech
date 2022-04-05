@@ -1,17 +1,23 @@
 import os
 import cmath
-from flask import Flask, flash, request, redirect, render_template
+from flask import Flask, flash, request, redirect, render_template, send_file
 from werkzeug.utils import secure_filename
+import speech_recognition as sr
+from pydub import AudioSegment
+from pydub.silence import split_on_silence
 
 app=Flask(__name__)
 
 app.secret_key = "secret key"
-#app.config['MAX_CONTENT_LENGTH'] = cmath.inf
 
 path = os.getcwd()
 # file Upload
 UPLOAD_FOLDER = os.path.join(path, 'uploads')
 OUTPUT_FOLDER = os.path.join(path, 'output')
+CHUNKS_FOLDER = os.path.join(path, 'audio-chunks')
+
+# create a speech recognition object
+r = sr.Recognizer()
 
 if not os.path.isdir(UPLOAD_FOLDER):
     os.mkdir(UPLOAD_FOLDER)
@@ -19,20 +25,90 @@ if not os.path.isdir(UPLOAD_FOLDER):
 if not os.path.isdir(OUTPUT_FOLDER):
     os.mkdir(OUTPUT_FOLDER)
 
+if not os.path.isdir(CHUNKS_FOLDER):
+    os.mkdir(CHUNKS_FOLDER)
+
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 
-ALLOWED_EXTENSIONS = set(['txt', 'wav'])
+ALLOWED_EXTENSIONS = set(['wav'])
 
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
+def get_large_audio_transcription(path):
+    """
+    Splitting the large audio file into chunks
+    and apply speech recognition on each of these chunks
+    """
+    # open the audio file using pydub
+    with open(OUTPUT_FOLDER + '/' + path + '.txt', 'w') as f:
+        print('Collecting Output ... ')
+        print()
+        print('Approx. Line by Line:')
+        print()
+        f.write('Collecting Output ... ')   
+        f.write('\n')
+        f.write('Approx. Line by Line:')
+        f.write('\n')
+        sound = AudioSegment.from_wav(UPLOAD_FOLDER + '/' + path)  
+        # split audio sound where silence is 700 miliseconds or more and get chunks
+        chunks = split_on_silence(sound,
+            # experiment with this value for your target audio file
+            min_silence_len = 500,
+            # adjust this per requirement
+            silence_thresh = sound.dBFS-14,
+            # keep the silence for 1 second, adjustable as well
+            keep_silence=500,
+        )
+        folder_name = CHUNKS_FOLDER
+        # create a directory to store the audio chunks
+        if not os.path.isdir(folder_name):
+            os.mkdir(folder_name)
+        whole_text = ""
+        # process each chunk 
+        for i, audio_chunk in enumerate(chunks, start=1):
+            # export audio chunk and save it in
+            # the `folder_name` directory.
+            chunk_filename = os.path.join(folder_name, f"chunk{i}.wav")
+            audio_chunk.export(chunk_filename, format="wav")
+            # recognize the chunk
+            with sr.AudioFile(chunk_filename) as source:
+                audio_listened = r.record(source)
+                # try converting it to text
+                try:
+                    text = r.recognize_google(audio_listened)
+                except sr.UnknownValueError as e:   
+                    print("Error:", str(e))
+                    f.write("Error: " + str(e))
+                    f.write('\n')
+                else:
+                    text = f"{text.capitalize()}. "
+                    print("->", text)
+                    f.write("-> " + text)
+                    f.write('\n')
+                    whole_text += text
+
+        # return the text for all chunks detected
+        f.write('Condensed Output:')
+        f.write('\n')
+        f.write(whole_text)\
+
+        #remove all audio chunks after conversion complete
+        for f in os.listdir(CHUNKS_FOLDER):
+            os.remove(os.path.join(CHUNKS_FOLDER, f))
+
+        return whole_text
+
 @app.route('/')
 def upload_form():
     return render_template('upload.html')
 
+@app.route('/')
+def download(filename):
+    return send_file(OUTPUT_FOLDER + '/' + filename, as_attachment=True)
 
 @app.route('/', methods=['POST'])
 def upload_file():
@@ -48,12 +124,16 @@ def upload_file():
         if file and allowed_file(file.filename):
             filename = secure_filename(file.filename)
             file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-            flash('File successfully uploaded')
-            return redirect('/')
+            get_large_audio_transcription(filename)
+            #flash('File successfully converted')
+            return download(file.filename + '.txt')
+            #return redirect('/')
         else:
-            flash('Allowed file types are txt, pdf, png, jpg, jpeg, gif')
+            flash('Allowed file type(s) are .wav. Please use an online audio file converter to wav.')
             return redirect(request.url)
 
 
+
+
 if __name__ == "__main__":
-    app.run(host = '127.0.0.1',port = 5002, debug = False)
+    app.run(host = '127.0.0.1',port = 5003, debug = False)

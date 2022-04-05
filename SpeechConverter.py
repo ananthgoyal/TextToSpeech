@@ -9,20 +9,22 @@ r = sr.Recognizer()
 # a function that splits the audio file into chunks
 # and applies speech recognition
 
-def get_large_audio_transcription(path):
+def get_large_audio_transcription(path, chunkFolder, uploadFolder, outputFolder):
     """
     Splitting the large audio file into chunks
     and apply speech recognition on each of these chunks
     """
     # open the audio file using pydub
-    with open('Output/' + path + '.txt', 'w') as f:
+    with open(outputFolder + '/' + path + '.txt', 'w') as f:
         print('Collecting Output ... ')
         print()
         print('Approx. Line by Line:')
+        print()
         f.write('Collecting Output ... ')   
         f.write('\n')
         f.write('Approx. Line by Line:')
-        sound = AudioSegment.from_wav('uploads/' + path)  
+        f.write('\n')
+        sound = AudioSegment.from_wav(uploadFolder + '/' + path)  
         # split audio sound where silence is 700 miliseconds or more and get chunks
         chunks = split_on_silence(sound,
             # experiment with this value for your target audio file
@@ -32,7 +34,7 @@ def get_large_audio_transcription(path):
             # keep the silence for 1 second, adjustable as well
             keep_silence=500,
         )
-        folder_name = "audio-chunks"
+        folder_name = chunkFolder
         # create a directory to store the audio chunks
         if not os.path.isdir(folder_name):
             os.mkdir(folder_name)
@@ -59,8 +61,14 @@ def get_large_audio_transcription(path):
                     f.write("-> " + text)
                     f.write('\n')
                     whole_text += text
+
         # return the text for all chunks detected
         f.write('Condensed Output:')
         f.write('\n')
-        f.write(whole_text)
+        f.write(whole_text)\
+
+        #remove all audio chunks after conversion complete
+        for f in os.listdir(chunkFolder):
+            os.remove(os.path.join(chunkFolder, f))
+
         return whole_text
