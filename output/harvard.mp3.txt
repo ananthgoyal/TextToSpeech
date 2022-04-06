@@ -1,0 +1,10 @@
+Collecting Output ... 
+Approx. Line by Line:
+-> The stale smell of old beer lingers. 
+-> It takes heat to bring out the odor. 
+-> A cold dip restores health and zest. 
+-> A salt pickle taste fine with ham. 
+-> Tacos al pastor are my favorite. 
+-> Acceptable food is the hot cross bun. 
+Condensed Output:
+The stale smell of old beer lingers. It takes heat to bring out the odor. A cold dip restores health and zest. A salt pickle taste fine with ham. Tacos al pastor are my favorite. Acceptable food is the hot cross bun. 

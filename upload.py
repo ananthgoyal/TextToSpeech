@@ -1,23 +1,28 @@
 import os
 import cmath
+import pathlib
 from flask import Flask, flash, request, redirect, render_template, send_file
 from werkzeug.utils import secure_filename
 import speech_recognition as sr
 from pydub import AudioSegment
 from pydub.silence import split_on_silence
 import schedule
+from multiprocessing import Process
 
 app=Flask(__name__)
 
 app.secret_key = "secret key"
 
 path = os.getcwd()
+
+global global_filename
+global_filename = ""
 # file Upload
 UPLOAD_FOLDER = os.path.join(path, 'uploads')
 OUTPUT_FOLDER = os.path.join(path, 'output')
 CHUNKS_FOLDER = os.path.join(path, 'audio-chunks')
 
-schedule.every(2).minutes.do(lambda: "test")
+#schedule.every(2).minutes.do(lambda: "test")
 # create a speech recognition object
 r = sr.Recognizer()
 
@@ -41,7 +46,7 @@ def allowed_file(filename):
 
 
 def get_large_audio_transcription(path):
-    schedule.run_pending()
+    #schedule.run_pending()
     """
     Splitting the large audio file into chunks
     and apply speech recognition on each of these chunks
@@ -103,21 +108,23 @@ def get_large_audio_transcription(path):
 
         #remove file after conversion complete
         os.remove(os.path.join(UPLOAD_FOLDER, path))
-
+        
+        #send_file(OUTPUT_FOLDER + '/' + path, as_attachment=True)
         return whole_text
 
 @app.route('/')
 def upload_form():
     return render_template('upload.html')
 
-@app.route('/')
+'''@app.route('/')
 def download(filename):
-    return send_file(OUTPUT_FOLDER + '/' + filename, as_attachment=True)
+    return send_file(OUTPUT_FOLDER + '/' + filename, as_attachment=True)'''
+
 
 @app.route('/', methods=['POST'])
 def upload_file():
-    if request.method == 'POST':
-        # check if the post request has the file part
+        global global_filename
+        # check if the post request has the file part       
         if 'file' not in request.files:
             flash('No file part')
             return redirect(request.url)
@@ -126,15 +133,22 @@ def upload_file():
             flash('No file selected for uploading')
             return redirect(request.url)
         if file and allowed_file(file.filename):
+
             filename = secure_filename(file.filename)
             file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-            get_large_audio_transcription(filename)
-            #flash('File successfully converted')
-            return download(file.filename + '.txt')
-            #return redirect('/')
+            global_filename = filename
+            print("og file: " + filename)
+            p = Process(target=get_large_audio_transcription, args = (filename,)) 
+            p.start()
+            return render_template('download.html')
         else:
             flash('Allowed file type(s) are .mp3. Please use an online audio file converter to mp3.')
             return redirect(request.url)
+
+@app.route('/output', methods=['POST'])
+def download():
+    print("filename: " + global_filename)
+    return send_file(OUTPUT_FOLDER + "/" + global_filename + '.txt', as_attachment=True)
 
 
 
