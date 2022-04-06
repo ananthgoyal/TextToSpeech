@@ -37,7 +37,7 @@ if not os.path.isdir(OUTPUT_FOLDER):
 if not os.path.isdir(CHUNKS_FOLDER):
     os.mkdir(CHUNKS_FOLDER)
 
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+tmp.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 
 ALLOWED_EXTENSIONS = set(['mp3'])
@@ -118,12 +118,12 @@ def get_large_audio_transcription(global_filename):
         #send_file(OUTPUT_FOLDER + '/' + path, as_attachment=True)
         #return whole_text
 
-@app.route('/')
+@tmp.route('/')
 def upload_form():
     return render_template('upload.html')
 
 
-@app.route('/', methods=['POST'])
+@tmp.route('/', methods=['POST'])
 def upload_file():
         global global_filename
         # check if the post request has the file part       
@@ -137,7 +137,7 @@ def upload_file():
         if file and allowed_file(file.filename):
 
             filename = secure_filename(file.filename)
-            file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+            file.save(os.path.join(tmp.config['UPLOAD_FOLDER'], filename))
             #global_filename = filename
             
             get_large_audio_transcription(filename)
@@ -146,7 +146,7 @@ def upload_file():
             flash('Allowed file type(s) are .mp3. Please use an online audio file converter to mp3.')
             return redirect(request.url)
 
-@app.route('/output', methods=['POST'])
+@tmp.route('/output', methods=['POST'])
 def download(file):
     return send_file(OUTPUT_FOLDER + "/" + file + '.txt', as_attachment=True)
 
