@@ -31,7 +31,7 @@ if not os.path.isdir(CHUNKS_FOLDER):
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 
-ALLOWED_EXTENSIONS = set(['wav'])
+ALLOWED_EXTENSIONS = set(['mp3'])
 
 
 def allowed_file(filename):
@@ -53,7 +53,7 @@ def get_large_audio_transcription(path):
         f.write('\n')
         f.write('Approx. Line by Line:')
         f.write('\n')
-        sound = AudioSegment.from_wav(UPLOAD_FOLDER + '/' + path)  
+        sound = AudioSegment.from_mp3(UPLOAD_FOLDER + '/' + path)  
         # split audio sound where silence is 700 miliseconds or more and get chunks
         chunks = split_on_silence(sound,
             # experiment with this value for your target audio file
@@ -72,7 +72,7 @@ def get_large_audio_transcription(path):
         for i, audio_chunk in enumerate(chunks, start=1):
             # export audio chunk and save it in
             # the `folder_name` directory.
-            chunk_filename = os.path.join(folder_name, f"chunk{i}.wav")
+            chunk_filename = os.path.join(folder_name, f"chunk{i}.mp3")
             audio_chunk.export(chunk_filename, format="wav")
             # recognize the chunk
             with sr.AudioFile(chunk_filename) as source:
@@ -90,14 +90,16 @@ def get_large_audio_transcription(path):
                     f.write("-> " + text)
                     f.write('\n')
                     whole_text += text
+            os.remove(os.path.join(CHUNKS_FOLDER, chunk_filename))
+
 
         # return the text for all chunks detected
         f.write('Condensed Output:')
         f.write('\n')
         f.write(whole_text)
-        os.remove(os.path.join(CHUNKS_FOLDER, chunk_filename))
 
-        #remove all audio chunks after conversion complete
+        #remove file after conversion complete
+        os.remove(os.path.join(UPLOAD_FOLDER, path))
 
         return whole_text
 
@@ -128,7 +130,7 @@ def upload_file():
             return download(file.filename + '.txt')
             #return redirect('/')
         else:
-            flash('Allowed file type(s) are .wav. Please use an online audio file converter to wav.')
+            flash('Allowed file type(s) are .mp3. Please use an online audio file converter to mp3.')
             return redirect(request.url)
 
 
