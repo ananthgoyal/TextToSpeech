@@ -11,9 +11,9 @@ from pydub.silence import split_on_silence
 
 from multiprocessing import Process
 
-app=Flask(__name__)
+tmp=Flask(__name__)
 
-app.secret_key = "secret key"
+tmp.secret_key = "secret key"
 
 path = os.getcwd()
 
@@ -157,4 +157,4 @@ def addSecs(tm, secs):
 
 
 if __name__ == "__main__":
-    app.run(host = '0.0.0.0',port = 5001)
+    tmp.run(host = '0.0.0.0',port = 5001)
