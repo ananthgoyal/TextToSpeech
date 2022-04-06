@@ -57,7 +57,8 @@ def get_large_audio_transcription(global_filename):
     and apply speech recognition on each of these chunks
     """
 
-
+    for f in os.listdir(OUTPUT_FOLDER):
+        os.remove(os.path.join(OUTPUT_FOLDER, f))
     # open the audio file using pydub
 
     uploaded = True
@@ -117,7 +118,6 @@ def get_large_audio_transcription(global_filename):
 
         #remove file after conversion complete
         os.remove(os.path.join(UPLOAD_FOLDER, global_filename))
-        fileName = ""
         #send_file(OUTPUT_FOLDER + '/' + path, as_attachment=True)
         #return whole_text
 
@@ -155,12 +155,8 @@ def upload_file():
 @app.route('/output', methods=['POST'])
 def download():
     global fileName
-    return send_file(OUTPUT_FOLDER + "/" + fileName + '.txt', as_attachment=True)
-
-def addSecs(tm, secs):
-    fulldate = datetime.datetime(100, 1, 1, tm.hour, tm.minute, tm.second)
-    fulldate = fulldate + datetime.timedelta(seconds=secs)
-    return fulldate.time()
+    for file in os.listdir(OUTPUT_FOLDER):
+        return send_file(OUTPUT_FOLDER + "/" + file, as_attachment=True)
 
 
 if __name__ == "__main__":
