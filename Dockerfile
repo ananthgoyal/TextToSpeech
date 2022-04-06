@@ -1,1 +1,1 @@
-test
+WORKDIR /tmp
