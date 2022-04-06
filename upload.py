@@ -5,6 +5,7 @@ from werkzeug.utils import secure_filename
 import speech_recognition as sr
 from pydub import AudioSegment
 from pydub.silence import split_on_silence
+import schedule
 
 app=Flask(__name__)
 
@@ -16,6 +17,7 @@ UPLOAD_FOLDER = os.path.join(path, 'uploads')
 OUTPUT_FOLDER = os.path.join(path, 'output')
 CHUNKS_FOLDER = os.path.join(path, 'audio-chunks')
 
+schedule.every(2).minutes.do(lambda: "test")
 # create a speech recognition object
 r = sr.Recognizer()
 
@@ -39,6 +41,7 @@ def allowed_file(filename):
 
 
 def get_large_audio_transcription(path):
+    schedule.run_pending()
     """
     Splitting the large audio file into chunks
     and apply speech recognition on each of these chunks
