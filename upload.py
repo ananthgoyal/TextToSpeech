@@ -119,7 +119,7 @@ def get_large_audio_transcription(global_filename):
         #remove file after conversion complete
         os.remove(os.path.join(UPLOAD_FOLDER, global_filename))
         #send_file(OUTPUT_FOLDER + '/' + path, as_attachment=True)
-        #return whole_text
+        return whole_text
 
 @app.route('/')
 def upload_form():
