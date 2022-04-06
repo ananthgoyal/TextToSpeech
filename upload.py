@@ -2,7 +2,6 @@ from datetime import datetime, timedelta
 import os
 import cmath
 import pathlib
-from turtle import onscreenclick
 from flask import Flask, flash, request, redirect, render_template, send_file
 from werkzeug.utils import secure_filename
 import speech_recognition as sr
