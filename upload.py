@@ -7,8 +7,12 @@ from werkzeug.utils import secure_filename
 import speech_recognition as sr
 from pydub import AudioSegment
 from pydub.silence import split_on_silence
+import threading
 
-from multiprocessing import Process
+
+
+global fileName
+fileName = ""
 
 app=Flask(__name__)
 
@@ -136,18 +140,22 @@ def upload_file():
         if file and allowed_file(file.filename):
 
             filename = secure_filename(file.filename)
+            global fileName
+            fileName = filename
             file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
             #global_filename = filename
             
-            get_large_audio_transcription(filename)
-            return download(filename)
+            #get_large_audio_transcription(filename)
+            threading.Thread(target=get_large_audio_transcription, args=(filename,)).start()
+            return render_template('download.html')
         else:
             flash('Allowed file type(s) are .mp3. Please use an online audio file converter to mp3.')
             return redirect(request.url)
 
 @app.route('/output', methods=['POST'])
-def download(file):
-    return send_file(OUTPUT_FOLDER + "/" + file + '.txt', as_attachment=True)
+def download():
+    global fileName
+    return send_file(OUTPUT_FOLDER + "/" + fileName + '.txt', as_attachment=True)
 
 def addSecs(tm, secs):
     fulldate = datetime.datetime(100, 1, 1, tm.hour, tm.minute, tm.second)
