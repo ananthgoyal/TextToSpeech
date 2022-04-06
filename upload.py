@@ -1,12 +1,14 @@
+from datetime import datetime, timedelta
 import os
 import cmath
 import pathlib
+from turtle import onscreenclick
 from flask import Flask, flash, request, redirect, render_template, send_file
 from werkzeug.utils import secure_filename
 import speech_recognition as sr
 from pydub import AudioSegment
 from pydub.silence import split_on_silence
-import schedule
+
 from multiprocessing import Process
 
 app=Flask(__name__)
@@ -15,8 +17,8 @@ app.secret_key = "secret key"
 
 path = os.getcwd()
 
-global global_filename
-global_filename = ""
+
+
 # file Upload
 UPLOAD_FOLDER = os.path.join(path, 'uploads')
 OUTPUT_FOLDER = os.path.join(path, 'output')
@@ -45,14 +47,18 @@ def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
-def get_large_audio_transcription(path):
+def get_large_audio_transcription(global_filename):
     #schedule.run_pending()
     """
     Splitting the large audio file into chunks
     and apply speech recognition on each of these chunks
     """
+
+
     # open the audio file using pydub
-    with open(OUTPUT_FOLDER + '/' + path + '.txt', 'w') as f:
+
+    uploaded = True
+    with open(OUTPUT_FOLDER + '/' + global_filename + '.txt', 'w') as f:
         print('Collecting Output ... ')
         print()
         print('Approx. Line by Line:')
@@ -61,7 +67,7 @@ def get_large_audio_transcription(path):
         f.write('\n')
         f.write('Approx. Line by Line:')
         f.write('\n')
-        sound = AudioSegment.from_mp3(UPLOAD_FOLDER + '/' + path)  
+        sound = AudioSegment.from_mp3(UPLOAD_FOLDER + '/' + global_filename)  
         # split audio sound where silence is 700 miliseconds or more and get chunks
         chunks = split_on_silence(sound,
             # experiment with this value for your target audio file
@@ -107,18 +113,14 @@ def get_large_audio_transcription(path):
         f.write(whole_text)
 
         #remove file after conversion complete
-        os.remove(os.path.join(UPLOAD_FOLDER, path))
+        os.remove(os.path.join(UPLOAD_FOLDER, global_filename))
         
         #send_file(OUTPUT_FOLDER + '/' + path, as_attachment=True)
-        return whole_text
+        #return whole_text
 
 @app.route('/')
 def upload_form():
     return render_template('upload.html')
-
-'''@app.route('/')
-def download(filename):
-    return send_file(OUTPUT_FOLDER + '/' + filename, as_attachment=True)'''
 
 
 @app.route('/', methods=['POST'])
@@ -136,21 +138,22 @@ def upload_file():
 
             filename = secure_filename(file.filename)
             file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-            global_filename = filename
-            print("og file: " + filename)
-            p = Process(target=get_large_audio_transcription, args = (filename,)) 
-            p.start()
-            return render_template('download.html')
+            #global_filename = filename
+            
+            get_large_audio_transcription(filename)
+            return download(filename)
         else:
             flash('Allowed file type(s) are .mp3. Please use an online audio file converter to mp3.')
             return redirect(request.url)
 
 @app.route('/output', methods=['POST'])
-def download():
-    print("filename: " + global_filename)
-    return send_file(OUTPUT_FOLDER + "/" + global_filename + '.txt', as_attachment=True)
+def download(file):
+    return send_file(OUTPUT_FOLDER + "/" + file + '.txt', as_attachment=True)
 
-
+def addSecs(tm, secs):
+    fulldate = datetime.datetime(100, 1, 1, tm.hour, tm.minute, tm.second)
+    fulldate = fulldate + datetime.timedelta(seconds=secs)
+    return fulldate.time()
 
 
 if __name__ == "__main__":
